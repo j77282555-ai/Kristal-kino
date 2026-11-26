@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KRISTAL — Kino Portali | Tarjima Kinolar va Seriallar</title>
+    <meta name="description" content="KRISTAL kino portali — eng sara tarjima kinolar, premyeralar, seriallar, obunachilar Shorts videolari va KRISTAL AI maslahatchisi." />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0c10',
+                        cardBg: '#15171e',
+                        elevatedBg: '#1c202a',
+                        primary: '#e50914',
+                        primaryHover: '#b80710',
+                        accent: '#f5c518'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- Firebase SDK (Compat for easy browser & preview compatibility) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* Asosiy va zaxira uslublar: Tailwind kechiksa ham ko'rinish barqaror bo'ladi */
+        :root {
+            --bg-main: #0b0c10;
+            --bg-card: #15171e;
+            --bg-elevated: #1c202a;
+            --border-subtle: #262b38;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --brand-red: #e50914;
+            --brand-red-hover: #b80710;
+        }
+
+        html, body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0b0c10; }
+        ::-webkit-scrollbar-thumb { background: #262936; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #e50914; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .movie-card:hover .movie-poster { transform: scale(1.06); }
+        .movie-poster { transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+
+        @keyframes tickerScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .ticker-track {
+            display: flex;
+            width: max-content;
+            animation: tickerScroll 28s linear infinite;
+        }
+        .ticker-track:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes aiFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+            25% { transform: translateY(-4px) rotate(-4deg) scale(1.04); }
+            50% { transform: translateY(-1px) rotate(0deg) scale(1.02); }
+            75% { transform: translateY(-5px) rotate(4deg) scale(1.05); }
+        }
+        @keyframes aiThink {
+            0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+            30% { transform: translateY(-3px) rotate(-10deg) scale(1.06); }
+            70% { transform: translateY(-2px) rotate(8deg) scale(0.98); }
+        }
+        @keyframes aiExcited {
+            0%, 100% { transform: translateY(0px) scale(1) rotate(0deg); }
+            25% { transform: translateY(-6px) scale(1.12) rotate(-6deg); }
+            50% { transform: translateY(-2px) scale(1.05) rotate(6deg); }
+            75% { transform: translateY(-5px) scale(1.1) rotate(-3deg); }
+        }
+        .ai-emoji-idle { animation: aiFloat 3.2s ease-in-out infinite; display: inline-block; }
+        .ai-emoji-thinking { animation: aiThink 1.1s ease-in-out infinite; display: inline-block; }
+        .ai-emoji-excited { animation: aiExcited 1.4s ease-in-out infinite; display: inline-block; }
+
+        /* Rasmdagi rover-robot uslubidagi sayt bo'ylab harakatlanuvchi AI yordamchi */
+        #roamingAiBot {
+            position: fixed;
+            left: 16px;
+            bottom: 24px;
+            z-index: 45;
+            cursor: pointer;
+            user-select: none;
+            filter: drop-shadow(0 12px 24px rgba(14, 165, 233, 0.35));
+            transition: transform 0.25s ease, filter 0.25s ease;
+            will-change: transform, left, top;
+        }
+        #roamingAiBot:hover {
+            transform: scale(1.07);
+            filter: drop-shadow(0 16px 30px rgba(249, 115, 22, 0.45));
+        }
+        @keyframes roverTrackSpin {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -24; }
+        }
+        @keyframes roverBodyBob {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
+        .rover-body-anim {
+            animation: roverBodyBob 1.8s ease-in-out infinite;
+        }
+        .rover-tread-anim {
+            stroke-dasharray: 6 6;
+            animation: roverTrackSpin 0.9s linear infinite;
+        }
+
+        /* KRISTAL yozuviga jilo effekti */
+        @keyframes kristalShimmer {
+            0% { background-position: -180% center; }
+            100% { background-position: 180% center; }
+        }
+        .kristal-gloss-text {
+            background: linear-gradient(
+                115deg,
+                #ffffff 0%,
+                #ffffff 35%,
+                #fde68a 48%,
+                #ff6b6b 52%,
+                #ffffff 65%,
+                #ffffff 100%
+            );
+            background-size: 220% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: kristalShimmer 3.6s linear infinite;
+            text-shadow: 0 0 18px rgba(229, 9, 20, 0.35);
+        }
+    </style>
+</head>
+<body class="bg-darkBg text-gray-100 min-h-screen flex flex-col">
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Roaming Rover AI Mascot (Inspired by uploaded image) -->
+    <button
+        type="button"
+        id="roamingAiBot"
+        onclick="openAiModal()"
+        title="KRISTAL AI — Bosing va suhbatlashing"
+        aria-label="KRISTAL AI"
+        class="bg-transparent border-0 p-0 focus:outline-none"
+    >
+        <div class="relative flex flex-col items-center">
+            <span id="roamingAiSpeech" class="mb-1 px-2.5 py-0.5 rounded-full bg-[#0f172a]/95 border border-sky-400/50 text-[10px] font-bold text-sky-200 whitespace-nowrap shadow">
+                KRISTAL AI
+            </span>
+            <svg width="78" height="68" viewBox="0 0 120 105" fill="none" xmlns="http://www.w3.org/2000/svg" class="rover-body-anim">
+                <!-- Antenna -->
+                <line x1="42" y1="22" x2="33" y2="8" stroke="#38BDF8" stroke-width="3.5" stroke-linecap="round" />
+                <circle cx="32" cy="7" r="4" fill="#F97316" />
+
+                <!-- Rear / Side Blue Chassis -->
+                <rect x="20" y="34" width="66" height="34" rx="14" fill="#0EA5E9" />
+                <path d="M24 46H42L48 56H24V46Z" fill="#0284C7" />
+
+                <!-- Front White & Orange Body -->
+                <rect x="44" y="20" width="54" height="46" rx="16" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2" />
+                <path d="M52 54H84L79 66H57L52 54Z" fill="#F97316" />
+                <circle cx="68" cy="59" r="3.5" fill="#F8FAFC" />
+
+                <!-- Visor Screen -->
+                <rect x="52" y="26" width="38" height="24" rx="9" fill="#071324" stroke="#38BDF8" stroke-width="2" />
+
+                <!-- Expressive Eyes (Mood reactive) -->
+                <g id="roverEyesNormal">
+                    <path d="M59 39C60.5 35.5 64.5 35.5 66 39" stroke="#38BDF8" stroke-width="3.2" stroke-linecap="round" />
+                    <path d="M76 39C77.5 35.5 81.5 35.5 83 39" stroke="#38BDF8" stroke-width="3.2" stroke-linecap="round" />
+                </g>
+                <g id="roverEyesExcited" style="display:none;">
+                    <circle cx="62.5" cy="38" r="3.5" fill="#FBBF24" />
+                    <circle cx="79.5" cy="38" r="3.5" fill="#FBBF24" />
+                </g>
+
+                <!-- Left Tank Tread (Orange) -->
+                <rect x="14" y="54" width="44" height="32" rx="16" fill="#F97316" stroke="#EA580C" stroke-width="2.5" />
+                <rect x="19" y="59" width="34" height="22" rx="11" fill="#1E293B" class="rover-tread-anim" stroke="#FB923C" stroke-width="2" />
+                <circle cx="27" cy="70" r="5" fill="#38BDF8" />
+                <circle cx="44" cy="70" r="5" fill="#38BDF8" />
+
+                <!-- Right Tank Tread (Orange) -->
+                <rect x="64" y="52" width="42" height="34" rx="17" fill="#F97316" stroke="#EA580C" stroke-width="2.5" />
+                <rect x="69" y="57" width="32" height="24" rx="12" fill="#1E293B" class="rover-tread-anim" stroke="#FB923C" stroke-width="2" />
+                <circle cx="85" cy="69" r="6" fill="#38BDF8" />
+            </svg>
+        </div>
+    </button>
+
+    <!-- Top Premieres Ticker -->
+    <div class="bg-[#11131a] border-b border-gray-800/80 text-xs py-1.5 overflow-hidden">
+        <div class="ticker-track items-center gap-8 text-gray-300" id="premieresTicker">
+            <span class="inline-flex items-center gap-2"><span class="px-1.5 py-0.5 rounded bg-primary text-white font-bold text-[10px]">LIVE</span> <strong class="text-white">KRISTAL PORTAL</strong> — Eng sara tarjima filmlar, premyeralar va seriallar HD sifatda</span>
+            <span class="inline-flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> <span id="tickerTrendText">Yangi premyeralar har kuni qo'shib boriladi</span></span>
+            <span class="inline-flex items-center gap-2"><i class="fa-solid fa-film text-primary"></i> <span>Obunachilar Shorts videolari va KRISTAL AI tavsiyalari</span></span>
+            <span class="inline-flex items-center gap-2"><span class="px-1.5 py-0.5 rounded bg-primary text-white font-bold text-[10px]">LIVE</span> <strong class="text-white">KRISTAL PORTAL</strong> — Eng sara tarjima filmlar, premyeralar va seriallar HD sifatda</span>
+            <span class="inline-flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> <span id="tickerTrendTextDup">Yangi premyeralar har kuni qo'shib boriladi</span></span>
+            <span class="inline-flex items-center gap-2"><i class="fa-solid fa-film text-primary"></i> <span>Obunachilar Shorts videolari va KRISTAL AI tavsiyalari</span></span>
+        </div>
+    </div>
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-40 bg-darkBg/95 backdrop-blur-md border-b border-gray-800/90 shadow-lg">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 gap-2 min-w-0">
+                <!-- Brand Logo -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="resetHome()" class="flex items-center gap-2 group focus:outline-none bg-transparent border-0 p-0">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary via-red-600 to-amber-500 flex items-center justify-center shadow-lg shadow-primary/30 group-hover:scale-105 transition shrink-0">
+                            <i class="fa-solid fa-gem text-white text-base sm:text-lg"></i>
+                        </div>
+                        <div class="text-left">
+                            <span class="text-lg sm:text-2xl font-extrabold tracking-wider kristal-gloss-text block leading-none">KRISTAL</span>
+                            <span id="brandSubLabel" class="text-[10px] text-gray-400 font-medium tracking-wide hidden sm:block">Kino Portali</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Search Input (Desktop) -->
+                <div class="hidden lg:flex flex-1 max-w-sm mx-2 min-w-0">
+                    <div class="relative w-full">
+                        <input
+                            id="searchInputDesktop"
+                            type="text"
+                            oninput="handleSearch(this.value)"
+                            placeholder="Kino nomini qidiring..."
+                            class="w-full bg-cardBg text-sm text-white placeholder-gray-400 rounded-full pl-10 pr-9 py-2 border border-gray-700/80 focus:outline-none focus:border-primary transition"
+                        />
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <button
+                            type="button"
+                            id="clearSearchDesktop"
+                            onclick="clearSearch()"
+                            class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white bg-transparent border-0 p-0"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Actions (Always visible & compact) -->
+                <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                    <!-- UZ / RU Language Switcher -->
+                    <div class="flex items-center bg-cardBg border border-gray-700/80 rounded-full p-0.5 text-[11px] font-bold shrink-0">
+                        <button type="button" id="langBtnUz" onclick="setLanguage('uz')" class="px-2 py-1 rounded-full bg-primary text-white border-0 transition">UZ</button>
+                        <button type="button" id="langBtnRu" onclick="setLanguage('ru')" class="px-2 py-1 rounded-full text-gray-400 hover:text-white border-0 bg-transparent transition">RU</button>
+                    </div>
+
+                    <!-- User Profile Button -->
+                    <button
+                        type="button"
+                        onclick="openUserProfileModal()"
+                        class="inline-flex items-center gap-1 bg-cardBg hover:bg-gray-800 text-gray-200 px-2 py-1.5 rounded-full text-xs font-semibold border border-gray-700 transition shrink-0"
+                        title="Profil"
+                    >
+                        <img id="headerUserAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Profil" class="w-5 h-5 rounded-full object-cover shrink-0" />
+                        <span id="headerUserName" class="hidden xl:inline max-w-[70px] truncate">Profil</span>
+                    </button>
+
+                    <!-- Ad Inquiry Button -->
+                    <button
+                        type="button"
+                        onclick="openAdInquiryModal()"
+                        class="inline-flex items-center gap-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-2.5 py-1.5 rounded-full text-xs font-semibold border border-amber-500/40 transition shrink-0"
+                        title="Reklama berish"
+                    >
+                        <i class="fa-solid fa-bullhorn"></i>
+                        <span id="adInquiryBtnLabel" class="hidden sm:inline">Reklama</span>
+                    </button>
+
+                    <!-- Admin Controls -->
+                    <div id="adminControls" class="hidden items-center gap-1 shrink-0">
+                        <button
+                            type="button"
+                            id="openAddMovieBtn"
+                            onclick="openAddModal()"
+                            class="inline-flex items-center gap-1 bg-primary hover:bg-primaryHover text-white px-2.5 py-1.5 rounded-full text-xs font-semibold shadow-md shadow-primary/30 border-0 cursor-pointer transition shrink-0"
+                        >
+                            <i class="fa-solid fa-plus"></i>
+                            <span id="addMovieBtnLabel" class="hidden md:inline">Kino joylash</span>
+                        </button>
+                        <button
+                            type="button"
+                            onclick="openAdModal()"
+                            class="inline-flex items-center gap-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 px-2 py-1.5 rounded-full text-xs font-semibold border border-amber-500/40 cursor-pointer transition shrink-0"
+                            title="Reklama sozlamalari"
+                        >
+                            <i class="fa-solid fa-sliders"></i>
+                        </button>
+                        <button
+                            type="button"
+                            onclick="logoutAdmin()"
+                            class="inline-flex items-center gap-1 bg-cardBg hover:bg-red-950/60 text-red-300 px-2 py-1.5 rounded-full text-xs font-medium border border-red-900/50 cursor-pointer transition shrink-0"
+                            title="Chiqish"
+                        >
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+
+                    <!-- Guest Admin Login Button -->
+                    <button
+                        type="button"
+                        id="adminLoginBtn"
+                        onclick="openLoginModal()"
+                        class="inline-flex items-center gap-1 bg-cardBg hover:bg-gray-800 text-gray-300 px-2.5 py-1.5 rounded-full text-xs font-medium border border-gray-700 cursor-pointer transition shrink-0"
+                    >
+                        <i class="fa-solid fa-lock text-primary"></i>
+                        <span id="adminBtnLabel">Admin</span>
+                    </button>
+
+                    <!-- Compact Live DB Status Badge on Far Right -->
+                    <span id="dbStatusBadge" class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 cursor-default shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span id="dbStatusText" class="hidden md:inline">Jonli baza</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Mobile / Tablet Search Input -->
+            <div class="lg:hidden pb-3">
+                <div class="relative w-full">
+                    <input
+                        id="searchInputMobile"
+                        type="text"
+                        oninput="handleSearch(this.value)"
+                        placeholder="Kino nomini qidiring..."
+                        class="w-full bg-cardBg text-sm text-white placeholder-gray-400 rounded-full pl-10 pr-8 py-2 border border-gray-700/80 focus:outline-none focus:border-primary"
+                    />
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <button
+                        type="button"
+                        id="clearSearchMobile"
+                        onclick="clearSearch()"
+                        class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white bg-transparent border-0 p-0"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dynamic Ad Banner -->
+    <div id="adBannerSection" class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1c1426] via-[#1a1826] to-[#111827] border border-amber-500/30 p-3.5 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+            <div class="flex items-center gap-3 text-center sm:text-left">
+                <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                    <span id="adBadgeText">Reklama</span>
+                </span>
+                <p id="adBannerText" class="text-xs sm:text-sm text-gray-200 font-medium">
+                    Eng yangi premyera kinolar va seriallar birinchi bizning Telegram kanalimizda!
+                </p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <a id="adBannerLink" href="https://t.me/kristal_kino" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs px-4 py-2 rounded-full transition shadow">
+                    <i class="fa-brands fa-telegram text-sm"></i>
+                    <span id="adBannerBtnText">Obuna bo'lish</span>
+                </a>
+                <button type="button" onclick="openAdInquiryModal()" class="inline-flex items-center gap-1 bg-white/10 hover:bg-white/15 text-amber-200 text-xs font-semibold px-3 py-2 rounded-full border border-amber-400/25 transition">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span id="adBannerContactBtn">Reklama berish</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Hero Showcase Banner -->
+        <section id="heroSection" class="relative rounded-2xl overflow-hidden mb-7 border border-gray-800/90 shadow-2xl min-h-[280px] sm:min-h-[340px] flex items-end">
+            <img id="heroBackdrop" src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1400&q=80" alt="Featured Movie" class="absolute inset-0 w-full h-full object-cover object-center brightness-50" />
+            <div class="absolute inset-0 bg-gradient-to-t from-darkBg via-darkBg/75 to-transparent"></div>
+            <div class="relative z-10 p-5 sm:p-8 max-w-2xl">
+                <div class="flex flex-wrap items-center gap-2 mb-2.5">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/90 text-white">
+                        <i class="fa-solid fa-fire"></i> <span id="heroBadgeLabel">Tavsiya etiladi</span>
+                    </span>
+                    <span id="heroQualityBadge" class="px-2 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">FULL HD</span>
+                    <span id="heroYearBadge" class="text-xs text-gray-300 font-semibold">2025</span>
+                </div>
+                <h1 id="heroTitle" class="text-2xl sm:text-4xl font-extrabold text-white mb-2 leading-tight">Yulduzlararo Sayohat</h1>
+                <p id="heroDesc" class="text-xs sm:text-sm text-gray-300 line-clamp-2 sm:line-clamp-3 mb-4">
+                    Koinot tubidagi sirli galaktikalarga yo'l olgan ekipajning insoniyat kelajagini saqlab qolish yo'lidagi hayajonli sarguzashti.
+                </p>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <button type="button" id="heroWatchBtn" onclick="watchHeroMovie()" class="inline-flex items-center gap-2 bg-primary hover:bg-primaryHover text-white font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-lg shadow-primary/30 border-0 transition">
+                        <i class="fa-solid fa-play"></i> <span id="heroWatchLabel">Hoziroq ko'rish</span>
+                    </button>
+                    <button type="button" onclick="openAiModal()" class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-full border border-white/15 backdrop-blur-sm transition">
+                        <span class="ai-emoji-idle">🤖</span> <span id="heroAiLabel">AI dan maslahat</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Genre Filter Bar -->
+        <section class="mb-7">
+            <div id="genreList" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2"></div>
+        </section>
+
+        <!-- Two-Column Portal Layout (Main Feed + Top Sidebar) -->
+        <div id="portalColumns" class="flex flex-col lg:flex-row gap-7 items-stretch lg:items-start w-full">
+            <div class="flex-1 min-w-0 space-y-8">
+                <!-- Movies Section -->
+                <section>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-1.5 h-6 rounded-full bg-primary"></span>
+                            <h2 id="sectionTitle" class="text-lg sm:text-xl font-bold text-white">Barcha kinolar</h2>
+                            <span id="moviesCount" class="text-xs text-gray-400 bg-cardBg px-2.5 py-0.5 rounded-full border border-gray-800">0</span>
+                        </div>
+                    </div>
+
+                    <div id="moviesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"></div>
+
+                    <div id="emptyState" class="hidden text-center py-14 px-4 bg-cardBg/60 rounded-2xl border border-gray-800/80 mt-4">
+                        <div class="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-3 text-gray-400 text-xl">
+                            <i class="fa-solid fa-film"></i>
+                        </div>
+                        <h3 id="emptyTitle" class="text-base font-semibold text-white mb-1">Kinolar topilmadi</h3>
+                        <p id="emptySubtitle" class="text-xs sm:text-sm text-gray-400 mb-4">Boshqa kalit so'z yoki janr tanlab ko'ring.</p>
+                        <button type="button" onclick="resetHome()" class="bg-primary hover:bg-primaryHover text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-full border-0 transition">
+                            <span id="resetFilterBtnLabel">Filterni tozalash</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Subscribers Shorts Section -->
+                <section id="shortsSection" class="bg-cardBg/60 border border-gray-800/90 rounded-2xl p-4 sm:p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-8 h-8 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-clapperboard"></i>
+                            </span>
+                            <div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <h2 id="shortsSectionTitle" class="text-base sm:text-lg font-bold text-white">Obunachilar Shorts Videolari</h2>
+                                    <span id="shortsDropHint" class="text-[11px] sm:text-xs text-amber-300/90 bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 rounded-full font-medium">
+                                        Qidiryotgan videongizni shu yerga joylab keting
+                                    </span>
+                                </div>
+                                <p id="shortsSectionSubtitle" class="text-xs text-gray-400">Foydalanuvchilar o'z profilida joylagan qisqa videolar</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="openUserProfileModal('shorts')" class="inline-flex items-center gap-1.5 bg-primary hover:bg-primaryHover text-white text-xs font-semibold px-3.5 py-2 rounded-full border-0 transition">
+                            <i class="fa-solid fa-plus"></i>
+                            <span id="postShortsBtnLabel">Shorts joylash</span>
+                        </button>
+                    </div>
+
+                    <div id="shortsGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+                    <div id="shortsEmptyState" class="hidden text-center py-8 text-xs sm:text-sm text-gray-400">
+                        <span id="shortsEmptyText">Hali Shorts videolar joylanmagan. Birinchi bo'lib o'z profilingizdan Shorts joylang!</span>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Sidebar (Top Rated / Popular + Quick Contact) -->
+            <aside id="rightSidebar" class="w-full lg:w-80 xl:w-96 shrink-0 space-y-5 block">
+                <div class="bg-cardBg border border-gray-800/90 rounded-2xl p-4">
+                    <div class="flex items-center justify-between mb-3.5">
+                        <h3 id="sidebarTopTitle" class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-crown text-accent"></i>
+                            <span>TOP Reytingli</span>
+                        </h3>
+                        <span class="text-[11px] text-gray-400">IMDb / Reyting</span>
+                    </div>
+                    <div id="topSidebarList" class="space-y-3"></div>
+                </div>
+
+                <div class="bg-gradient-to-br from-[#1b1829] to-cardBg border border-amber-500/25 rounded-2xl p-4">
+                    <h3 id="sidebarContactTitle" class="text-sm font-bold text-white mb-1.5 flex items-center gap-2">
+                        <i class="fa-solid fa-handshake text-amber-400"></i>
+                        <span>Hamkorlik va Reklama</span>
+                    </h3>
+                    <p id="sidebarContactDesc" class="text-xs text-gray-400 mb-3">
+                        Reklama joylashtirish yoki taklif yuborish uchun Telegram va Instagram orqali bog'laning.
+                    </p>
+                    <div class="flex flex-col gap-2">
+                        <a id="sidebarTgLink" href="https://t.me/kristal_kino" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 rounded-xl px-3 py-2 text-xs font-semibold transition">
+                            <span><i class="fa-brands fa-telegram mr-1.5"></i> Telegram</span>
+                            <span id="sidebarTgHandle">@kristal_kino</span>
+                        </a>
+                        <a id="sidebarIgLink" href="https://instagram.com/kristal.kino" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between bg-pink-500/15 hover:bg-pink-500/25 text-pink-300 border border-pink-500/30 rounded-xl px-3 py-2 text-xs font-semibold transition">
+                            <span><i class="fa-brands fa-instagram mr-1.5"></i> Instagram</span>
+                            <span id="sidebarIgHandle">@kristal.kino</span>
+                        </a>
+                        <button type="button" onclick="openAdInquiryModal()" class="w-full bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs py-2 rounded-xl border-0 transition">
+                            <span id="sidebarInquiryBtn">Reklama berish oynasi</span>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#08090d] border-t border-gray-800/80 py-6 mt-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-gem text-primary"></i>
+                <span class="font-bold text-gray-200">KRISTAL</span>
+                <span id="footerCopyright">— Kino Portali. Barcha huquqlar himoyalangan.</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-4">
+                <a id="footerTgLink" href="https://t.me/kristal_kino" target="_blank" rel="noopener noreferrer" class="hover:text-sky-400 transition">
+                    <i class="fa-brands fa-telegram mr-1"></i> Telegram
+                </a>
+                <a id="footerIgLink" href="https://instagram.com/kristal.kino" target="_blank" rel="noopener noreferrer" class="hover:text-pink-400 transition">
+                    <i class="fa-brands fa-instagram mr-1"></i> Instagram
+                </a>
+                <button type="button" onclick="openAdInquiryModal()" class="hover:text-amber-300 bg-transparent border-0 p-0 text-xs text-gray-400 transition">
+                    <span id="footerAdLinkText">Reklama berish</span>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Movie Watch Modal -->
+    <div id="movieModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl my-auto">
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-800">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full bg-primary shrink-0"></span>
+                    <h3 id="modalTitle" class="text-base sm:text-lg font-bold text-white truncate">Kino nomi</h3>
+                </div>
+                <button type="button" onclick="closeMovieModal()" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white flex items-center justify-center border-0 transition shrink-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="videoContainer" class="relative w-full bg-black aspect-video flex items-center justify-center"></div>
+
+            <div class="p-5 sm:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <span id="modalYear" class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-200 font-semibold"></span>
+                        <span id="modalGenre" class="px-2.5 py-1 rounded-md bg-primary/20 text-red-300 font-semibold border border-primary/30"></span>
+                        <span id="modalRating" class="px-2.5 py-1 rounded-md bg-amber-500/15 text-accent font-bold"></span>
+                        <span id="modalViews" class="px-2.5 py-1 rounded-md bg-gray-800/90 text-gray-300 font-medium"></span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="modalSaveBtn" onclick="toggleSaveFromModal()" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition">
+                            <i class="fa-regular fa-bookmark"></i>
+                            <span id="modalSaveText">Saqlash</span>
+                        </button>
+                        <div id="modalAdminActions" class="hidden items-center gap-1.5">
+                            <button type="button" onclick="editCurrentMovie()" class="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 transition">
+                                <i class="fa-solid fa-pen"></i> <span id="editBtnLabel">Tahrirlash</span>
+                            </button>
+                            <button type="button" onclick="deleteCurrentMovie()" class="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 transition">
+                                <i class="fa-solid fa-trash"></i> <span id="deleteBtnLabel">O'chirish</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <p id="modalDescription" class="text-sm text-gray-300 leading-relaxed mb-5"></p>
+
+                <!-- Comments Section -->
+                <div class="border-t border-gray-800 pt-4">
+                    <h4 id="commentsTitle" class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                        <i class="fa-regular fa-comments text-primary"></i>
+                        <span>Izohlar</span>
+                        <span id="commentsCount" class="text-xs text-gray-400 font-normal">(0)</span>
+                    </h4>
+
+                    <form onsubmit="handleAddComment(event)" class="flex gap-2 mb-4">
+                        <input
+                            id="commentInput"
+                            type="text"
+                            required
+                            placeholder="Film haqida fikringizni yozing..."
+                            class="flex-1 bg-darkBg text-sm text-white placeholder-gray-500 rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-primary"
+                        />
+                        <button type="submit" class="bg-primary hover:bg-primaryHover text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl border-0 transition shrink-0">
+                            <span id="commentSubmitLabel">Yuborish</span>
+                        </button>
+                    </form>
+
+                    <div id="commentsList" class="space-y-2.5 max-h-48 overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add / Edit Movie Modal (Admin) -->
+    <div id="formModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl my-auto">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+                <h3 id="formModalTitle" class="text-base sm:text-lg font-bold text-white">Yangi kino joylash</h3>
+                <button type="button" onclick="closeFormModal()" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white flex items-center justify-center border-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="movieForm" onsubmit="handleFormSubmit(event)" class="p-5 space-y-4">
+                <input type="hidden" id="editMovieId" />
+
+                <div>
+                    <label id="labelTitle" class="block text-xs font-semibold text-gray-300 mb-1.5">Kino nomi *</label>
+                    <input id="movieTitle" type="text" required placeholder="Masalan: Qora ritsar" class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2.5 border border-gray-700 focus:outline-none focus:border-primary" />
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label id="labelYear" class="block text-xs font-semibold text-gray-300 mb-1.5">Yili *</label>
+                        <input id="movieYear" type="number" min="1900" max="2035" required value="2025" class="w-full bg-darkBg text-sm text-white rounded-xl px-3 py-2.5 border border-gray-700 focus:outline-none focus:border-primary" />
+                    </div>
+                    <div>
+                        <label id="labelGenre" class="block text-xs font-semibold text-gray-300 mb-1.5">Janri *</label>
+                        <select id="movieGenre" class="w-full bg-darkBg text-sm text-white rounded-xl px-3 py-2.5 border border-gray-700 focus:outline-none focus:border-primary">
+                            <option value="Jangari">Jangari</option>
+                            <option value="Komediya">Komediya</option>
+                            <option value="Drama">Drama</option>
+                            <option value="Fantastika">Fantastika</option>
+                            <option value="Qo'rqinchili">Qo'rqinchili</option>
+                            <option value="Multfilm">Multfilm</option>
+                            <option value="Serial">Serial</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label id="labelRating" class="block text-xs font-semibold text-gray-300 mb-1.5">Reyting (1-10)</label>
+                        <input id="movieRating" type="number" step="0.1" min="1" max="10" value="8.5" class="w-full bg-darkBg text-sm text-white rounded-xl px-3 py-2.5 border border-gray-700 focus:outline-none focus:border-primary" />
+                    </div>
+                </div>
+
+                <div>
+                    <label id="labelPoster" class="block text-xs font-semibold text-gray-300 mb-1.5">Poster (muqova) rasm havolasi *</label>
+                    <input id="moviePoster" type="url" required placeholder="https://example.com/poster.jpg" class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2.5 border border-gray-700 focus:outline-none focus:border-primary" />
+                </div>
+
+                <div>
+                    <label id="labelVideo" class="block text-xs font-semibold text-gray-300 mb-1.5">Video havolasi (YouTube, Google Drive, OK.ru yoki .mp4) *</label>
+                    <input id="movieVideo" type="url" required placeholder="https://www.youtube.com/watch?v=... yoki .../video.mp4" class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2.5 border border-gray-700 focus:outline-none focus:border-primary" />
+                </div>
+
+                <div>
+                    <label id="labelDesc" class="block text-xs font-semibold text-gray-300 mb-1.5">Kino haqida qisqacha *</label>
+                    <textarea id="movieDesc" rows="3" required placeholder="Film mazmuni haqida qisqacha yozing..." class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2.5 border border-gray-700 focus:outline-none focus:border-primary"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-2.5 pt-2">
+                    <button type="button" onclick="closeFormModal()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 border-0 transition">
+                        <span id="cancelFormLabel">Bekor qilish</span>
+                    </button>
+                    <button type="submit" id="saveMovieBtn" class="px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-primary hover:bg-primaryHover text-white border-0 shadow-lg shadow-primary/30 transition">
+                        <span id="saveMovieBtnLabel">Saqlash</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="loginModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 id="loginModalTitle" class="text-base font-bold text-white">Admin kirish</h3>
+                </div>
+                <button type="button" onclick="closeLoginModal()" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white flex items-center justify-center border-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label id="loginUserLabel" class="block text-xs font-semibold text-gray-300 mb-1">Login</label>
+                    <input id="adminUsername" type="text" required placeholder="admin" class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2.5 border border-gray-700 focus:outline-none focus:border-primary" />
+                </div>
+                <div>
+                    <label id="loginPassLabel" class="block text-xs font-semibold text-gray-300 mb-1">Parol</label>
+                    <input id="adminPassword" type="password" required placeholder="••••••••" class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2.5 border border-gray-700 focus:outline-none focus:border-primary" />
+                </div>
+                <p id="loginHintText" class="text-[11px] text-gray-400">Standart kirish: <span class="text-gray-200 font-semibold">admin</span> / <span class="text-gray-200 font-semibold">12345</span></p>
+                <button type="submit" class="w-full bg-primary hover:bg-primaryHover text-white font-semibold text-sm py-2.5 rounded-xl border-0 shadow-lg shadow-primary/30 transition">
+                    <span id="loginSubmitLabel">Kirish</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Ad & Contact Settings Modal -->
+    <div id="adModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-lg p-5 shadow-2xl my-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="adSettingsTitle" class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-amber-400"></i>
+                    <span>Reklama va Aloqa Sozlamalari</span>
+                </h3>
+                <button type="button" onclick="closeAdModal()" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white flex items-center justify-center border-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleAdSave(event)" class="space-y-3.5">
+                <div>
+                    <label id="adTextLabel" class="block text-xs font-semibold text-gray-300 mb-1">Reklama banner matni</label>
+                    <input id="adTextInput" type="text" required class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-amber-400" />
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label id="adBtnTextLabel" class="block text-xs font-semibold text-gray-300 mb-1">Banner tugma yozuvi</label>
+                        <input id="adBtnTextInput" type="text" required class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-amber-400" />
+                    </div>
+                    <div>
+                        <label id="adLinkLabel" class="block text-xs font-semibold text-gray-300 mb-1">Banner havolasi</label>
+                        <input id="adLinkInput" type="url" required class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-amber-400" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-gray-800">
+                    <div>
+                        <label id="contactTgLabel" class="block text-xs font-semibold text-sky-300 mb-1">Admin Telegram (@username yoki link)</label>
+                        <input id="contactTgInput" type="text" required placeholder="@kristal_kino yoki https://t.me/..." class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-sky-400" />
+                    </div>
+                    <div>
+                        <label id="contactIgLabel" class="block text-xs font-semibold text-pink-300 mb-1">Admin Instagram (@username yoki link)</label>
+                        <input id="contactIgInput" type="text" required placeholder="@kristal.kino yoki https://instagram.com/..." class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-pink-400" />
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeAdModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 border-0">
+                        <span id="adCancelLabel">Yopish</span>
+                    </button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold border-0">
+                        <span id="adSaveLabel">Saqlash</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ad Inquiry / Contact Modal for Advertisers -->
+    <div id="adInquiryModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-md p-5 shadow-2xl my-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="inquiryModalTitle" class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-bullhorn text-amber-400"></i>
+                    <span>Reklama berish va Aloqa</span>
+                </h3>
+                <button type="button" onclick="closeAdInquiryModal()" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white flex items-center justify-center border-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <p id="inquiryModalDesc" class="text-xs sm:text-sm text-gray-300 mb-4">
+                Saytda reklama joylashtirish yoki hamkorlik qilish uchun to'g'ridan-to'g'ri Telegram yoki Instagram orqali bog'laning:
+            </p>
+
+            <div class="space-y-2.5 mb-4">
+                <a id="inquiryTgLink" href="https://t.me/kristal_kino" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 rounded-xl px-4 py-3 text-sm font-semibold transition">
+                    <span class="flex items-center gap-2.5">
+                        <i class="fa-brands fa-telegram text-lg"></i>
+                        <span id="inquiryTgBtnLabel">Telegram orqali yozish</span>
+                    </span>
+                    <span id="inquiryTgHandleText" class="text-xs font-bold">@kristal_kino</span>
+                </a>
+
+                <a id="inquiryIgLink" href="https://instagram.com/kristal.kino" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between bg-pink-500/15 hover:bg-pink-500/25 text-pink-300 border border-pink-500/30 rounded-xl px-4 py-3 text-sm font-semibold transition">
+                    <span class="flex items-center gap-2.5">
+                        <i class="fa-brands fa-instagram text-lg"></i>
+                        <span id="inquiryIgBtnLabel">Instagram orqali bog'lanish</span>
+                    </span>
+                    <span id="inquiryIgHandleText" class="text-xs font-bold">@kristal.kino</span>
+                </a>
+            </div>
+
+            <form onsubmit="handleQuickInquiry(event)" class="border-t border-gray-800 pt-3.5 space-y-2.5">
+                <label id="quickInquiryLabel" class="block text-xs font-semibold text-gray-300">Tezkor so'rov matni (Telegramga nusxalab yuborish uchun)</label>
+                <input id="quickInquiryName" type="text" required placeholder="Ismingiz yoki kompaniya nomi" class="w-full bg-darkBg text-xs sm:text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-amber-400" />
+                <textarea id="quickInquiryMessage" rows="2" required placeholder="Qanday reklama joylashtirmoqchisiz?" class="w-full bg-darkBg text-xs sm:text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-amber-400"></textarea>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs sm:text-sm py-2.5 rounded-xl border-0 transition">
+                    <i class="fa-solid fa-paper-plane mr-1"></i>
+                    <span id="quickInquirySubmitBtn">Matnni nusxalash va Telegramga o'tish</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Profile & Shorts Modal -->
+    <div id="userProfileModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-2xl p-5 shadow-2xl my-auto">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3.5 mb-4">
+                <div class="flex items-center gap-2.5">
+                    <img id="profileModalAvatarPreview" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Avatar" class="w-10 h-10 rounded-full object-cover border border-primary/50" />
+                    <div>
+                        <h3 id="profileModalTitle" class="text-base sm:text-lg font-bold text-white">Foydalanuvchi Profili</h3>
+                        <p id="profileModalSub" class="text-xs text-gray-400">Profilingizni sozlang va Shorts videolar joylang</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeUserProfileModal()" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white flex items-center justify-center border-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex gap-2 mb-4">
+                <button type="button" id="profileTabBtn" onclick="switchProfileTab('profile')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-primary text-white border-0">
+                    <span id="profileTabLabel">Profil sozlamalari</span>
+                </button>
+                <button type="button" id="shortsTabBtn" onclick="switchProfileTab('shorts')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-gray-800 text-gray-300 border-0">
+                    <span id="shortsTabLabel">Shorts joylash</span>
+                </button>
+            </div>
+
+            <!-- Profile Settings Form -->
+            <form id="profileSettingsForm" onsubmit="handleSaveProfile(event)" class="space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label id="profileNameLabel" class="block text-xs font-semibold text-gray-300 mb-1">Ismingiz</label>
+                        <input id="profileNameInput" type="text" required placeholder="Masalan: Azizbek" class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-primary" />
+                    </div>
+                    <div>
+                        <label id="profileHandleLabel" class="block text-xs font-semibold text-gray-300 mb-1">@username</label>
+                        <input id="profileHandleInput" type="text" required placeholder="@azizbek_uz" class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-primary" />
+                    </div>
+                </div>
+                <div>
+                    <label id="profileAvatarLabel" class="block text-xs font-semibold text-gray-300 mb-1">Avatar rasm havolasi</label>
+                    <input id="profileAvatarInput" type="url" placeholder="https://..." class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-primary" />
+                </div>
+                <div>
+                    <label id="profileBioLabel" class="block text-xs font-semibold text-gray-300 mb-1">Bio (qisqacha ma'lumot)</label>
+                    <textarea id="profileBioInput" rows="2" placeholder="Kino ishqibozi..." class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-primary"></textarea>
+                </div>
+                <button type="submit" class="bg-primary hover:bg-primaryHover text-white font-semibold text-xs sm:text-sm px-5 py-2 rounded-xl border-0 transition">
+                    <span id="saveProfileBtnLabel">Profilni saqlash</span>
+                </button>
+            </form>
+
+            <!-- Shorts Upload Form -->
+            <form id="shortsUploadForm" onsubmit="handleCreateShort(event)" class="hidden space-y-3">
+                <div>
+                    <label id="shortTitleLabel" class="block text-xs font-semibold text-gray-300 mb-1">Shorts sarlavhasi *</label>
+                    <input id="shortTitleInput" type="text" required placeholder="Masalan: Eng qiziq kino lavhasi" class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-primary" />
+                </div>
+                <div>
+                    <label id="shortVideoLabel" class="block text-xs font-semibold text-gray-300 mb-1">Video havolasi (YouTube / .mp4) *</label>
+                    <input id="shortVideoInput" type="url" required placeholder="https://www.youtube.com/shorts/... yoki .../clip.mp4" class="w-full bg-darkBg text-sm text-white rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-primary" />
+                </div>
+                <button type="submit" class="bg-primary hover:bg-primaryHover text-white font-semibold text-xs sm:text-sm px-5 py-2 rounded-xl border-0 transition">
+                    <i class="fa-solid fa-upload mr-1"></i>
+                    <span id="publishShortBtnLabel">Shorts videoni joylash</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- KRISTAL AI Emoji Assistant Modal -->
+    <div id="aiModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-cardBg border border-purple-500/30 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl my-auto">
+            <div class="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-indigo-950/70 via-purple-950/60 to-cardBg border-b border-gray-800">
+                <div class="flex items-center gap-3">
+                    <span id="aiModalEmoji" class="ai-emoji-idle text-3xl leading-none select-none">🤖</span>
+                    <div>
+                        <h3 class="text-base font-bold text-white leading-tight">KRISTAL AI</h3>
+                        <p id="aiMoodStatusText" class="text-[11px] text-purple-300 font-medium">Kayfiyat: Do'stona va tayyor</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAiModal()" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white flex items-center justify-center border-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Mood Selector Pills -->
+            <div class="flex items-center gap-1.5 px-5 py-2.5 bg-darkBg/60 border-b border-gray-800/80 overflow-x-auto no-scrollbar text-xs">
+                <button type="button" onclick="setAiMood('happy', '😄', 'Quvnoq')" class="px-2.5 py-1 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-200 border-0 shrink-0">😄 Quvnoq</button>
+                <button type="button" onclick="setAiMood('excited', '🤩', 'Hayajonli')" class="px-2.5 py-1 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-200 border-0 shrink-0">🤩 Hayajonli</button>
+                <button type="button" onclick="setAiMood('cool', '😎', 'Zamonaviy')" class="px-2.5 py-1 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-200 border-0 shrink-0">😎 Zamonaviy</button>
+                <button type="button" onclick="setAiMood('thoughtful', '🤔', 'O\'ychan')" class="px-2.5 py-1 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-200 border-0 shrink-0">🤔 O'ychan</button>
+            </div>
+
+            <div id="aiChatMessages" class="p-4 space-y-3 max-h-80 overflow-y-auto bg-darkBg/40"></div>
+
+            <form onsubmit="handleAiSubmit(event)" class="p-3.5 border-t border-gray-800 flex items-center gap-2 bg-cardBg">
+                <input
+                    id="aiInput"
+                    type="text"
+                    required
+                    placeholder="Qanday kino ko'rmoqchisiz? Masalan: komediya yoki fantastika..."
+                    class="flex-1 bg-darkBg text-sm text-white placeholder-gray-500 rounded-xl px-3.5 py-2 border border-gray-700 focus:outline-none focus:border-purple-400"
+                />
+                <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl border-0 transition shrink-0">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 1. CONFIGURATION & STATE
+        // =========================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-kristal-kino-demo-key",
+            authDomain: "kristal-kino.firebaseapp.com",
+            projectId: "kristal-kino",
+            storageBucket: "kristal-kino.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:kristalkino"
+        };
+
+        let db = null;
+        let auth = null;
+        let isFirebaseConnected = false;
+
+        const STORAGE_KEYS = {
+            MOVIES: 'kristal_movies_v1',
+            SAVED: 'kristal_saved_v1',
+            ADMIN: 'kristal_admin_logged_in_v1',
+            AD: 'kristal_ad_config_v1',
+            LANG: 'kristal_lang_v1',
+            USER_PROFILE: 'kristal_user_profile_v1',
+            SHORTS: 'kristal_shorts_v1'
+        };
+
+        const GENRES = [
+            { id: 'all', uz: 'Barchasi', ru: 'Все' },
+            { id: 'Jangari', uz: 'Jangari', ru: 'Боевик' },
+            { id: 'Komediya', uz: 'Komediya', ru: 'Комедия' },
+            { id: 'Drama', uz: 'Drama', ru: 'Драма' },
+            { id: 'Fantastika', uz: 'Fantastika', ru: 'Фантастика' },
+            { id: "Qo'rqinchili", uz: "Qo'rqinchili", ru: 'Ужасы' },
+            { id: 'Multfilm', uz: 'Multfilm', ru: 'Мультфильм' },
+            { id: 'Serial', uz: 'Serial', ru: 'Сериал' }
+        ];
+
+        const DEFAULT_MOVIES = [
+            {
+                id: 'm-1',
+                title: 'Yulduzlararo Sayohat',
+                year: 2025,
+                genre: 'Fantastika',
+                rating: 9.1,
+                views: 1420,
+                poster: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                description: "Koinot tubidagi noma'lum sayyoralarga yo'l olgan ekipajning vaqt va makon chegaralarini sinovdan o'tkazuvchi ilmiy-fantastik sarguzashti.",
+                comments: [
+                    { author: 'Jasur', text: 'Grafika va atmosfera juda kuchli chiqibdi!', date: '2026-11-20' }
+                ]
+            },
+            {
+                id: 'm-2',
+                title: 'Tungi Tezkor Missiya',
+                year: 2025,
+                genre: 'Jangari',
+                rating: 8.6,
+                views: 985,
+                poster: 'https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?auto=format&fit=crop&w=800&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+                description: "Maxfiy hujjatni xavfsiz manzilga yetkazishga urinayotgan maxsus bo'linma xodimining shiddatli va kutilmagan burilishlarga boy kechasi.",
+                comments: []
+            },
+            {
+                id: 'm-3',
+                title: 'Kulgili Ofis Kunlari',
+                year: 2024,
+                genre: 'Komediya',
+                rating: 8.2,
+                views: 760,
+                poster: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+                description: "Kichik studiyada ishlaydigan do'stlarning katta loyihani topshirish oldidan boshidan kechiradigan eng kulgili va quvnoq vaziyatlari.",
+                comments: []
+            },
+            {
+                id: 'm-4',
+                title: 'Kuzgi Xotiralar',
+                year: 2024,
+                genre: 'Drama',
+                rating: 8.8,
+                views: 640,
+                poster: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=800&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4',
+                description: "Yillar o'tib ona shahriga qaytgan musiqachining eski do'stlari va oilasi bilan kechirgan samimiy va ta'sirli uchrashuvlari.",
+                comments: []
+            }
+        ];
+
+        const DEFAULT_AD = {
+            text: "Eng yangi premyera kinolar va seriallar birinchi bizning Telegram kanalimizda!",
+            btnText: "Obuna bo'lish",
+            link: "https://t.me/kristal_kino",
+            telegram: "@kristal_kino",
+            instagram: "@kristal.kino"
+        };
+
+        const DEFAULT_PROFILE = {
+            name: "Mehmon Tomoshabin",
+            handle: "@kristal_user",
+            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
+            bio: "Eng sara filmlar va qisqa Shorts muxlisi."
+        };
+
+        const DEFAULT_SHORTS = [
+            {
+                id: 's-1',
+                authorName: 'Dostonbek',
+                authorHandle: '@doston_kino',
+                title: 'Kino sahnasidan qisqa lavha',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                likes: 24,
+                liked: false
+            }
+        ];
+
+        const I18N = {
+            uz: {
+                brandSub: 'Kino Portali',
+                liveDb: 'Jonli baza',
+                localDb: 'Mahalliy baza',
+                searchPlaceholder: 'Kino nomini qidiring...',
+                saved: 'Saqlanganlar',
+                adInquiry: 'Reklama berish',
+                addMovie: 'Kino joylash',
+                admin: 'Admin',
+                adBadge: 'Reklama',
+                adBannerContact: 'Reklama berish',
+                heroBadge: 'Tavsiya etiladi',
+                heroWatch: "Hoziroq ko'rish",
+                heroAi: 'AI dan maslahat',
+                allMovies: 'Barcha kinolar',
+                savedMovies: 'Saqlangan kinolar',
+                emptyTitle: 'Kinolar topilmadi',
+                emptySub: "Boshqa kalit so'z yoki janr tanlab ko'ring.",
+                resetFilter: 'Filterni tozalash',
+                shortsTitle: 'Obunachilar Shorts Videolari',
+                shortsDropHint: 'Qidiryotgan videongizni shu yerga joylab keting',
+                shortsSub: "Foydalanuvchilar o'z profilida joylagan qisqa videolar",
+                postShorts: 'Shorts joylash',
+                shortsEmpty: "Hali Shorts videolar joylanmagan. Birinchi bo'lib o'z profilingizdan Shorts joylang!",
+                topRated: 'TOP Reytingli',
+                contactTitle: 'Hamkorlik va Reklama',
+                contactDesc: "Reklama joylashtirish yoki taklif yuborish uchun Telegram va Instagram orqali bog'laning.",
+                contactModalBtn: 'Reklama berish oynasi',
+                footerCopy: '— Kino Portali. Barcha huquqlar himoyalangan.',
+                comments: 'Izohlar',
+                commentPlaceholder: 'Film haqida fikringizni yozing...',
+                send: 'Yuborish',
+                save: 'Saqlash',
+                savedState: 'Saqlangan',
+                edit: 'Tahrirlash',
+                delete: "O'chirish",
+                aiGreeting: "Salom! Men KRISTAL AI. Kayfiyatingiz yoki yoqtirgan janringizni ayting — saytimizdagi eng mos kinoni topib beraman!",
+                aiMoodPrefix: 'Kayfiyat'
+            },
+            ru: {
+                brandSub: 'Кинопортал',
+                liveDb: 'Онлайн база',
+                localDb: 'Локальная база',
+                searchPlaceholder: 'Поиск фильма по названию...',
+                saved: 'Избранное',
+                adInquiry: 'Реклама',
+                addMovie: 'Добавить фильм',
+                admin: 'Админ',
+                adBadge: 'Реклама',
+                adBannerContact: 'Заказать рекламу',
+                heroBadge: 'Рекомендуем',
+                heroWatch: 'Смотреть сейчас',
+                heroAi: 'Совет от AI',
+                allMovies: 'Все фильмы',
+                savedMovies: 'Избранные фильмы',
+                emptyTitle: 'Фильмы не найдены',
+                emptySub: 'Попробуйте другой запрос или выберите другой жанр.',
+                resetFilter: 'Сбросить фильтр',
+                shortsTitle: 'Shorts от подписчиков',
+                shortsDropHint: 'Оставьте здесь видео, которое ищете',
+                shortsSub: 'Короткие видео, опубликованные пользователями в профиле',
+                postShorts: 'Добавить Shorts',
+                shortsEmpty: 'Пока нет Shorts видео. Опубликуйте первое видео из своего профиля!',
+                topRated: 'ТОП Рейтинг',
+                contactTitle: 'Сотрудничество и Реклама',
+                contactDesc: 'Свяжитесь с нами через Telegram или Instagram по вопросам рекламы и сотрудничества.',
+                contactModalBtn: 'Окно рекламы',
+                footerCopy: '— Кинопортал. Все права защищены.',
+                comments: 'Комментарии',
+                commentPlaceholder: 'Напишите ваш отзыв о фильме...',
+                send: 'Отправить',
+                save: 'Сохранить',
+                savedState: 'Сохранено',
+                edit: 'Изменить',
+                delete: 'Удалить',
+                aiGreeting: "Привет! Я KRISTAL AI. Расскажите о своём настроении или любимом жанре — подберу лучший фильм из каталога!",
+                aiMoodPrefix: 'Настроение'
+            }
+        };
+
+        let state = {
+            lang: localStorage.getItem(STORAGE_KEYS.LANG) || 'uz',
+            movies: [],
+            savedIds: [],
+            shorts: [],
+            userProfile: { ...DEFAULT_PROFILE },
+            adConfig: { ...DEFAULT_AD },
+            isAdmin: localStorage.getItem(STORAGE_KEYS.ADMIN) === 'true',
+            selectedGenre: 'all',
+            searchQuery: '',
+            onlySaved: false,
+            activeMovieId: null,
+            aiMood: { emoji: '🤖', label: "Do'stona va tayyor", animClass: 'ai-emoji-idle' },
+            aiHistory: []
+        };
+
+        // =========================================================================
+        // 2. HELPERS & STORAGE
+        // =========================================================================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const colors = {
+                success: 'bg-emerald-950/95 border-emerald-500/40 text-emerald-200',
+                error: 'bg-red-950/95 border-red-500/40 text-red-200',
+                info: 'bg-cardBg/95 border-gray-700 text-gray-100'
+            };
+            const icons = {
+                success: 'fa-circle-check text-emerald-400',
+                error: 'fa-circle-exclamation text-red-400',
+                info: 'fa-circle-info text-sky-400'
+            };
+
+            const el = document.createElement('div');
+            el.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl border text-xs sm:text-sm font-medium shadow-xl transition-all duration-300 ${colors[type] || colors.info}`;
+            el.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i><span>${escapeHtml(message)}</span>`;
+            container.appendChild(el);
+
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(8px)';
+                setTimeout(() => el.remove(), 250);
+            }, 2800);
+        }
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function normalizeSocialUrl(value, platform) {
+            const raw = (value || '').trim();
+            if (!raw) {
+                return platform === 'tg' ? 'https://t.me/kristal_kino' : 'https://instagram.com/kristal.kino';
+            }
+            if (raw.startsWith('http://') || raw.startsWith('https://')) {
+                return raw;
+            }
+            const clean = raw.replace(/^@+/, '');
+            return platform === 'tg' ? `https://t.me/${clean}` : `https://instagram.com/${clean}`;
+        }
+
+        function formatSocialHandle(value, fallback) {
+            const raw = (value || '').trim();
+            if (!raw) return fallback;
+            if (raw.startsWith('@')) return raw;
+            const parts = raw.replace(/\/+$/, '').split('/');
+            const last = parts[parts.length - 1] || fallback;
+            return last.startsWith('@') ? last : `@${last}`;
+        }
+
+        function loadLocalState() {
+            try {
+                const savedMovies = JSON.parse(localStorage.getItem(STORAGE_KEYS.MOVIES) || 'null');
+                state.movies = Array.isArray(savedMovies) && savedMovies.length > 0 ? savedMovies : [...DEFAULT_MOVIES];
+            } catch (e) {
+                state.movies = [...DEFAULT_MOVIES];
+            }
+
+            try {
+                const savedIds = JSON.parse(localStorage.getItem(STORAGE_KEYS.SAVED) || '[]');
+                state.savedIds = Array.isArray(savedIds) ? savedIds : [];
+            } catch (e) {
+                state.savedIds = [];
+            }
+
+            try {
+                const ad = JSON.parse(localStorage.getItem(STORAGE_KEYS.AD) || 'null');
+                state.adConfig = ad ? { ...DEFAULT_AD, ...ad } : { ...DEFAULT_AD };
+            } catch (e) {
+                state.adConfig = { ...DEFAULT_AD };
+            }
+
+            try {
+                const profile = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER_PROFILE) || 'null');
+                state.userProfile = profile ? { ...DEFAULT_PROFILE, ...profile } : { ...DEFAULT_PROFILE };
+            } catch (e) {
+                state.userProfile = { ...DEFAULT_PROFILE };
+            }
+
+            try {
+                const shorts = JSON.parse(localStorage.getItem(STORAGE_KEYS.SHORTS) || 'null');
+                state.shorts = Array.isArray(shorts) ? shorts : [...DEFAULT_SHORTS];
+            } catch (e) {
+                state.shorts = [...DEFAULT_SHORTS];
+            }
+        }
+
+        function persistLocalState() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.MOVIES, JSON.stringify(state.movies));
+                localStorage.setItem(STORAGE_KEYS.SAVED, JSON.stringify(state.savedIds));
+                localStorage.setItem(STORAGE_KEYS.AD, JSON.stringify(state.adConfig));
+                localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(state.userProfile));
+                localStorage.setItem(STORAGE_KEYS.SHORTS, JSON.stringify(state.shorts));
+            } catch (e) {
+                console.warn('Local storage write warning:', e);
+            }
+        }
+
+        // =========================================================================
+        // 3. FIREBASE SYNC (OPTIONAL LIVE BACKEND)
+        // =========================================================================
+        async function initFirebase() {
+            try {
+                if (typeof firebase === 'undefined' || !firebase.apps) return;
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                auth = firebase.auth();
+                db = firebase.firestore();
+
+                await auth.signInAnonymously();
+                isFirebaseConnected = true;
+                updateDbBadge();
+
+                db.collection('kristal_movies').onSnapshot((snap) => {
+                    if (!snap.empty) {
+                        const cloudMovies = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        state.movies = cloudMovies;
+                        persistLocalState();
+                        renderAll();
+                    }
+                }, () => {
+                    isFirebaseConnected = false;
+                    updateDbBadge();
+                });
+
+                db.collection('kristal_shorts').orderBy('createdAt', 'desc').onSnapshot((snap) => {
+                    if (!snap.empty) {
+                        state.shorts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        persistLocalState();
+                        renderShorts();
+                    }
+                }, () => {});
+            } catch (err) {
+                isFirebaseConnected = false;
+                updateDbBadge();
+            }
+        }
+
+        function updateDbBadge() {
+            const t = I18N[state.lang];
+            const badge = document.getElementById('dbStatusBadge');
+            const text = document.getElementById('dbStatusText');
+            if (!badge || !text) return;
+
+            badge.classList.remove('hidden');
+            if (isFirebaseConnected) {
+                badge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 cursor-default shrink-0';
+                text.textContent = t.liveDb;
+            } else {
+                badge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 cursor-default shrink-0';
+                text.textContent = t.localDb;
+            }
+        }
+
+        // =========================================================================
+        // 4. LANGUAGE & UI TRANSLATIONS
+        // =========================================================================
+        function setLanguage(lang) {
+            state.lang = lang === 'ru' ? 'ru' : 'uz';
+            localStorage.setItem(STORAGE_KEYS.LANG, state.lang);
+            document.documentElement.lang = state.lang;
+
+            const uzBtn = document.getElementById('langBtnUz');
+            const ruBtn = document.getElementById('langBtnRu');
+            if (uzBtn && ruBtn) {
+                if (state.lang === 'uz') {
+                    uzBtn.className = 'px-2.5 py-1 rounded-full bg-primary text-white border-0 transition';
+                    ruBtn.className = 'px-2.5 py-1 rounded-full text-gray-400 hover:text-white border-0 bg-transparent transition';
+                } else {
+                    ruBtn.className = 'px-2.5 py-1 rounded-full bg-primary text-white border-0 transition';
+                    uzBtn.className = 'px-2.5 py-1 rounded-full text-gray-400 hover:text-white border-0 bg-transparent transition';
+                }
+            }
+
+            applyStaticTranslations();
+            renderAll();
+        }
+
+        function applyStaticTranslations() {
+            const t = I18N[state.lang];
+            const setText = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = val;
+            };
+            const setPlaceholder = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.placeholder = val;
+            };
+
+            setText('brandSubLabel', t.brandSub);
+            setPlaceholder('searchInputDesktop', t.searchPlaceholder);
+            setPlaceholder('searchInputMobile', t.searchPlaceholder);
+            setText('savedLabel', t.saved);
+            setText('adInquiryBtnLabel', t.adInquiry);
+            setText('addMovieBtnLabel', t.addMovie);
+            setText('adminBtnLabel', t.admin);
+            setText('adBadgeText', t.adBadge);
+            setText('adBannerContactBtn', t.adBannerContact);
+            setText('heroBadgeLabel', t.heroBadge);
+            setText('heroWatchLabel', t.heroWatch);
+            setText('heroAiLabel', t.heroAi);
+            setText('emptyTitle', t.emptyTitle);
+            setText('emptySubtitle', t.emptySub);
+            setText('resetFilterBtnLabel', t.resetFilter);
+            setText('shortsSectionTitle', t.shortsTitle);
+            setText('shortsDropHint', t.shortsDropHint);
+            setText('shortsSectionSubtitle', t.shortsSub);
+            setText('postShortsBtnLabel', t.postShorts);
+            setText('shortsEmptyText', t.shortsEmpty);
+            setText('sidebarTopTitle', t.topRated);
+            setText('sidebarContactTitle', t.contactTitle);
+            setText('sidebarContactDesc', t.contactDesc);
+            setText('sidebarInquiryBtn', t.contactModalBtn);
+            setText('footerCopyright', t.footerCopy);
+            setText('commentsTitle', t.comments);
+            setPlaceholder('commentInput', t.commentPlaceholder);
+            setText('commentSubmitLabel', t.send);
+            setText('editBtnLabel', t.edit);
+            setText('deleteBtnLabel', t.delete);
+
+            updateDbBadge();
+            updateSavedCounter();
+        }
+
+        // =========================================================================
+        // 5. RENDERING MOVIES, GENRES, SIDEBAR, AD & SHORTS
+        // =========================================================================
+        function renderAll() {
+            renderAdAndSocials();
+            renderUserHeader();
+            renderGenres();
+            renderHero();
+            renderMovies();
+            renderTopSidebar();
+            renderShorts();
+            updateAdminUI();
+            updateSavedCounter();
+        }
+
+        function renderAdAndSocials() {
+            const cfg = state.adConfig || DEFAULT_AD;
+            const tgUrl = normalizeSocialUrl(cfg.telegram, 'tg');
+            const igUrl = normalizeSocialUrl(cfg.instagram, 'ig');
+            const tgHandle = formatSocialHandle(cfg.telegram, '@kristal_kino');
+            const igHandle = formatSocialHandle(cfg.instagram, '@kristal.kino');
+
+            const bannerText = document.getElementById('adBannerText');
+            const bannerBtnText = document.getElementById('adBannerBtnText');
+            const bannerLink = document.getElementById('adBannerLink');
+            if (bannerText) bannerText.textContent = cfg.text || DEFAULT_AD.text;
+            if (bannerBtnText) bannerBtnText.textContent = cfg.btnText || DEFAULT_AD.btnText;
+            if (bannerLink) bannerLink.href = cfg.link || tgUrl;
+
+            ['sidebarTgLink', 'inquiryTgLink', 'footerTgLink'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.href = tgUrl;
+            });
+            ['sidebarIgLink', 'inquiryIgLink', 'footerIgLink'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.href = igUrl;
+            });
+
+            const sTg = document.getElementById('sidebarTgHandle');
+            const sIg = document.getElementById('sidebarIgHandle');
+            const iTg = document.getElementById('inquiryTgHandleText');
+            const iIg = document.getElementById('inquiryIgHandleText');
+            if (sTg) sTg.textContent = tgHandle;
+            if (sIg) sIg.textContent = igHandle;
+            if (iTg) iTg.textContent = tgHandle;
+            if (iIg) iIg.textContent = igHandle;
+        }
+
+        function renderUserHeader() {
+            const avatarEl = document.getElementById('headerUserAvatar');
+            const nameEl = document.getElementById('headerUserName');
+            if (avatarEl && state.userProfile.avatar) avatarEl.src = state.userProfile.avatar;
+            if (nameEl) nameEl.textContent = state.userProfile.name || 'Profil';
+        }
+
+        function renderGenres() {
+            const container = document.getElementById('genreList');
+            if (!container) return;
+
+            container.innerHTML = GENRES.map(g => {
+                const active = state.selectedGenre === g.id && !state.onlySaved;
+                const label = state.lang === 'ru' ? g.ru : g.uz;
+                return `
+                    <button
+                        type="button"
+                        onclick="selectGenre('${escapeHtml(g.id)}')"
+                        class="px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold shrink-0 transition ${
+                            active
+                                ? 'bg-primary text-white border-0 shadow-md shadow-primary/30'
+                                : 'bg-cardBg hover:bg-gray-800 text-gray-300 border border-gray-800'
+                        }"
+                    >
+                        ${escapeHtml(label)}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function renderHero() {
+            const featured = state.movies[0] || DEFAULT_MOVIES[0];
+            if (!featured) return;
+
+            const backdrop = document.getElementById('heroBackdrop');
+            const title = document.getElementById('heroTitle');
+            const desc = document.getElementById('heroDesc');
+            const year = document.getElementById('heroYearBadge');
+
+            if (backdrop) backdrop.src = featured.poster;
+            if (title) title.textContent = featured.title;
+            if (desc) desc.textContent = featured.description;
+            if (year) year.textContent = featured.year || '2025';
+        }
+
+        function watchHeroMovie() {
+            const featured = state.movies[0] || DEFAULT_MOVIES[0];
+            if (featured) openMovieModal(featured.id);
+        }
+
+        function getFilteredMovies() {
+            const q = (state.searchQuery || '').trim().toLowerCase();
+            return state.movies.filter(m => {
+                if (state.onlySaved && !state.savedIds.includes(m.id)) return false;
+                if (!state.onlySaved && state.selectedGenre !== 'all' && m.genre !== state.selectedGenre) return false;
+                if (q) {
+                    const hay = `${m.title || ''} ${m.genre || ''} ${m.year || ''} ${m.description || ''}`.toLowerCase();
+                    if (!hay.includes(q)) return false;
+                }
+                return true;
+            });
+        }
+
+        function renderMovies() {
+            const t = I18N[state.lang];
+            const grid = document.getElementById('moviesGrid');
+            const emptyState = document.getElementById('emptyState');
+            const countEl = document.getElementById('moviesCount');
+            const titleEl = document.getElementById('sectionTitle');
+
+            if (!grid) return;
+            const list = getFilteredMovies();
+
+            if (titleEl) {
+                titleEl.textContent = state.onlySaved ? t.savedMovies : t.allMovies;
+            }
+            if (countEl) {
+                countEl.textContent = String(list.length);
+            }
+
+            if (list.length === 0) {
+                grid.innerHTML = '';
+                if (emptyState) emptyState.classList.remove('hidden');
+                return;
+            }
+
+            if (emptyState) emptyState.classList.add('hidden');
+
+            grid.innerHTML = list.map(movie => {
+                const isSaved = state.savedIds.includes(movie.id);
+                return `
+                    <article onclick="openMovieModal('${escapeHtml(movie.id)}')" class="movie-card group cursor-pointer bg-cardBg border border-gray-800/90 hover:border-primary/50 rounded-2xl overflow-hidden flex flex-col shadow-md transition">
+                        <div class="relative aspect-[2/3] w-full overflow-hidden bg-gray-900">
+                            <img
+                                src="${escapeHtml(movie.poster)}"
+                                alt="${escapeHtml(movie.title)}"
+                                loading="lazy"
+                                onerror="this.src='https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80'"
+                                class="movie-poster w-full h-full object-cover"
+                            />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30"></div>
+
+                            <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-extrabold bg-primary text-white shadow">
+                                HD
+                            </span>
+
+                            <span class="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/75 text-accent text-xs font-bold backdrop-blur-sm">
+                                <i class="fa-solid fa-star text-[10px]"></i>
+                                ${Number(movie.rating || 8.0).toFixed(1)}
+                            </span>
+
+                            <button
+                                type="button"
+                                onclick="event.stopPropagation(); toggleSaveMovie('${escapeHtml(movie.id)}')"
+                                class="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full bg-black/70 hover:bg-primary text-white flex items-center justify-center border border-white/10 transition"
+                                title="${t.save}"
+                            >
+                                <i class="${isSaved ? 'fa-solid text-accent' : 'fa-regular'} fa-bookmark text-xs"></i>
+                            </button>
+
+                            <div class="absolute bottom-2.5 left-2.5 flex items-center gap-2 text-[11px] text-gray-200 font-medium">
+                                <span>${escapeHtml(movie.year || '')}</span>
+                                <span>•</span>
+                                <span>${escapeHtml(movie.genre || '')}</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 flex-1 flex flex-col justify-between">
+                            <h3 class="text-xs sm:text-sm font-bold text-white line-clamp-2 group-hover:text-primary transition">
+                                ${escapeHtml(movie.title)}
+                            </h3>
+                            <div class="flex items-center justify-between text-[11px] text-gray-400 mt-2 pt-2 border-t border-gray-800/70">
+                                <span><i class="fa-regular fa-eye mr-1"></i>${Number(movie.views || 0)}</span>
+                                <span class="text-primary font-semibold inline-flex items-center gap-1">
+                                    <i class="fa-solid fa-play text-[10px]"></i> ${state.lang === 'ru' ? 'Смотреть' : "Ko'rish"}
+                                </span>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function renderTopSidebar() {
+            const container = document.getElementById('topSidebarList');
+            if (!container) return;
+
+            const topMovies = [...state.movies]
+                .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
+                .slice(0, 5);
+
+            container.innerHTML = topMovies.map((m, idx) => `
+                <div onclick="openMovieModal('${escapeHtml(m.id)}')" class="flex items-center gap-3 p-2 rounded-xl hover:bg-elevatedBg cursor-pointer transition group">
+                    <span class="w-5 text-center text-xs font-extrabold ${idx === 0 ? 'text-accent' : 'text-gray-400'}">${idx + 1}</span>
+                    <img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" class="w-11 h-14 rounded-lg object-cover shrink-0 bg-gray-800" />
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-white truncate group-hover:text-primary transition">${escapeHtml(m.title)}</p>
+                        <p class="text-[11px] text-gray-400">${escapeHtml(m.genre || '')} • ${escapeHtml(m.year || '')}</p>
+                        <p class="text-[11px] text-accent font-semibold mt-0.5"><i class="fa-solid fa-star text-[10px]"></i> ${Number(m.rating || 8.0).toFixed(1)}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderShorts() {
+            const grid = document.getElementById('shortsGrid');
+            const emptyEl = document.getElementById('shortsEmptyState');
+            if (!grid) return;
+
+            if (!state.shorts || state.shorts.length === 0) {
+                grid.innerHTML = '';
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            if (emptyEl) emptyEl.classList.add('hidden');
+
+            grid.innerHTML = state.shorts.map(s => {
+                const embedHtml = buildVideoPlayerHtml(s.videoUrl);
+                return `
+                    <div class="bg-darkBg border border-gray-800 rounded-2xl overflow-hidden flex flex-col">
+                        <div class="aspect-video w-full bg-black">
+                            ${embedHtml}
+                        </div>
+                        <div class="p-3 flex items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-white truncate">${escapeHtml(s.title)}</p>
+                                <p class="text-[11px] text-gray-400 truncate">${escapeHtml(s.authorName)} <span class="text-purple-400">${escapeHtml(s.authorHandle)}</span></p>
+                            </div>
+                            <button type="button" onclick="toggleLikeShort('${escapeHtml(s.id)}')" class="px-2.5 py-1 rounded-full text-xs font-semibold ${s.liked ? 'bg-primary/20 text-primary border-primary/40' : 'bg-gray-800 text-gray-300'} shrink-0">
+                                <i class="fa-solid fa-heart mr-1"></i>${Number(s.likes || 0)}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleLikeShort(shortId) {
+            const target = state.shorts.find(s => s.id === shortId);
+            if (!target) return;
+            target.liked = !target.liked;
+            target.likes = Math.max(0, Number(target.likes || 0) + (target.liked ? 1 : -1));
+            persistLocalState();
+            renderShorts();
+        }
+
+        // =========================================================================
+        // 6. FILTERS, SEARCH & SAVED MOVIES
+        // =========================================================================
+        function selectGenre(genreId) {
+            state.onlySaved = false;
+            state.selectedGenre = genreId;
+            renderGenres();
+            renderMovies();
+        }
+
+        function toggleSavedFilter() {
+            state.onlySaved = !state.onlySaved;
+            const btn = document.getElementById('savedFilterBtn');
+            if (btn) {
+                if (state.onlySaved) {
+                    btn.classList.add('ring-2', 'ring-accent');
+                } else {
+                    btn.classList.remove('ring-2', 'ring-accent');
+                }
+            }
+            renderGenres();
+            renderMovies();
+        }
+
+        function handleSearch(val) {
+            state.searchQuery = val || '';
+            const dInput = document.getElementById('searchInputDesktop');
+            const mInput = document.getElementById('searchInputMobile');
+            if (dInput && dInput.value !== state.searchQuery) dInput.value = state.searchQuery;
+            if (mInput && mInput.value !== state.searchQuery) mInput.value = state.searchQuery;
+
+            const hasQuery = state.searchQuery.trim().length > 0;
+            ['clearSearchDesktop', 'clearSearchMobile'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('hidden', !hasQuery);
+            });
+
+            renderMovies();
+        }
+
+        function clearSearch() {
+            handleSearch('');
+        }
+
+        function resetHome() {
+            state.selectedGenre = 'all';
+            state.searchQuery = '';
+            state.onlySaved = false;
+            const dInput = document.getElementById('searchInputDesktop');
+            const mInput = document.getElementById('searchInputMobile');
+            if (dInput) dInput.value = '';
+            if (mInput) mInput.value = '';
+            ['clearSearchDesktop', 'clearSearchMobile'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            const savedBtn = document.getElementById('savedFilterBtn');
+            if (savedBtn) savedBtn.classList.remove('ring-2', 'ring-accent');
+            renderGenres();
+            renderMovies();
+        }
+
+        function toggleSaveMovie(movieId) {
+            const idx = state.savedIds.indexOf(movieId);
+            if (idx === -1) {
+                state.savedIds.push(movieId);
+                showToast(state.lang === 'ru' ? 'Добавлено в избранное' : "Saqlanganlarga qo'shildi", 'success');
+            } else {
+                state.savedIds.splice(idx, 1);
+                showToast(state.lang === 'ru' ? 'Удалено из избранного' : "Saqlanganlardan o'chirildi", 'info');
+            }
+            persistLocalState();
+            updateSavedCounter();
+            renderMovies();
+            if (state.activeMovieId === movieId) {
+                updateModalSaveButton(movieId);
+            }
+        }
+
+        function toggleSaveFromModal() {
+            if (state.activeMovieId) {
+                toggleSaveMovie(state.activeMovieId);
+            }
+        }
+
+        function updateSavedCounter() {
+            const badge = document.getElementById('savedCountBadge');
+            if (badge) badge.textContent = String(state.savedIds.length);
+        }
+
+        function updateModalSaveButton(movieId) {
+            const t = I18N[state.lang];
+            const btn = document.getElementById('modalSaveBtn');
+            const txt = document.getElementById('modalSaveText');
+            if (!btn || !txt) return;
+
+            const isSaved = state.savedIds.includes(movieId);
+            txt.textContent = isSaved ? t.savedState : t.save;
+            btn.innerHTML = `<i class="${isSaved ? 'fa-solid text-accent' : 'fa-regular'} fa-bookmark"></i> <span id="modalSaveText">${escapeHtml(txt.textContent)}</span>`;
+        }
+
+        // =========================================================================
+        // 7. UNIVERSAL VIDEO PLAYER & MOVIE MODAL
+        // =========================================================================
+        function buildVideoPlayerHtml(url) {
+            const raw = (url || '').trim();
+            if (!raw) {
+                return `<div class="text-gray-400 text-sm p-6 text-center">Video havolasi mavjud emas</div>`;
+            }
+
+            // YouTube watch / share / shorts links
+            const ytMatch = raw.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+            if (ytMatch && ytMatch[1]) {
+                return `<iframe src="https://www.youtube.com/embed/${escapeHtml(ytMatch[1])}" class="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            }
+
+            // Google Drive file links
+            const gdriveMatch = raw.match(/drive\.google\.com\/file\/d\/([A-Za-z0-9_-]+)/);
+            if (gdriveMatch && gdriveMatch[1]) {
+                return `<iframe src="https://drive.google.com/file/d/${escapeHtml(gdriveMatch[1])}/preview" class="w-full h-full border-0" allow="autoplay" allowfullscreen></iframe>`;
+            }
+
+            // OK.ru video links
+            const okMatch = raw.match(/ok\.ru\/video\/(\d+)/);
+            if (okMatch && okMatch[1]) {
+                return `<iframe src="https://ok.ru/videoembed/${escapeHtml(okMatch[1])}" class="w-full h-full border-0" allow="autoplay" allowfullscreen></iframe>`;
+            }
+
+            // Direct video file or fallback video tag
+            return `<video src="${escapeHtml(raw)}" controls playsinline class="w-full h-full object-contain bg-black"></video>`;
+        }
+
+        function openMovieModal(movieId) {
+            const movie = state.movies.find(m => m.id === movieId);
+            if (!movie) return;
+
+            state.activeMovieId = movie.id;
+            movie.views = Number(movie.views || 0) + 1;
+            persistLocalState();
+            renderMovies();
+
+            const modal = document.getElementById('movieModal');
+            document.getElementById('modalTitle').textContent = movie.title;
+            document.getElementById('modalYear').textContent = movie.year || '';
+            document.getElementById('modalGenre').textContent = movie.genre || '';
+            document.getElementById('modalRating').innerHTML = `<i class="fa-solid fa-star mr-1"></i>${Number(movie.rating || 8.0).toFixed(1)}`;
+            document.getElementById('modalViews').innerHTML = `<i class="fa-regular fa-eye mr-1"></i>${movie.views}`;
+            document.getElementById('modalDescription').textContent = movie.description || '';
+            document.getElementById('videoContainer').innerHTML = buildVideoPlayerHtml(movie.videoUrl);
+
+            updateModalSaveButton(movie.id);
+
+            const adminActions = document.getElementById('modalAdminActions');
+            if (adminActions) {
+                adminActions.classList.toggle('hidden', !state.isAdmin);
+                adminActions.classList.toggle('flex', state.isAdmin);
+            }
+
+            renderComments(movie);
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeMovieModal() {
+            const modal = document.getElementById('movieModal');
+            const container = document.getElementById('videoContainer');
+            if (container) container.innerHTML = '';
+            if (modal) modal.classList.add('hidden');
+            state.activeMovieId = null;
+        }
+
+        function renderComments(movie) {
+            const listEl = document.getElementById('commentsList');
+            const countEl = document.getElementById('commentsCount');
+            const comments = Array.isArray(movie.comments) ? movie.comments : [];
+
+            if (countEl) countEl.textContent = `(${comments.length})`;
+            if (!listEl) return;
+
+            if (comments.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-gray-500">${state.lang === 'ru' ? 'Пока нет комментариев. Напишите первым!' : "Hali izohlar yo'q. Birinchi bo'lib fikr qoldiring!"}</p>`;
+                return;
+            }
+
+            listEl.innerHTML = comments.map(c => `
+                <div class="bg-darkBg border border-gray-800/80 rounded-xl p-3">
+                    <div class="flex items-center justify-between text-[11px] text-gray-400 mb-1">
+                        <span class="font-bold text-gray-200">${escapeHtml(c.author || state.userProfile.name)}</span>
+                        <span>${escapeHtml(c.date || '')}</span>
+                    </div>
+                    <p class="text-xs text-gray-300">${escapeHtml(c.text)}</p>
+                </div>
+            `).join('');
+        }
+
+        function handleAddComment(e) {
+            e.preventDefault();
+            if (!state.activeMovieId) return;
+            const input = document.getElementById('commentInput');
+            const text = (input ? input.value : '').trim();
+            if (!text) return;
+
+            const movie = state.movies.find(m => m.id === state.activeMovieId);
+            if (!movie) return;
+
+            if (!Array.isArray(movie.comments)) movie.comments = [];
+            movie.comments.unshift({
+                author: state.userProfile.name || 'Mehmon',
+                text,
+                date: new Date().toISOString().slice(0, 10)
+            });
+
+            if (input) input.value = '';
+            persistLocalState();
+            renderComments(movie);
+            showToast(state.lang === 'ru' ? 'Комментарий добавлен' : "Izoh qo'shildi", 'success');
+        }
+
+        // =========================================================================
+        // 8. ADMIN AUTH, ADD / EDIT / DELETE MOVIE & AD SETTINGS
+        // =========================================================================
+        function updateAdminUI() {
+            const adminControls = document.getElementById('adminControls');
+            const loginBtn = document.getElementById('adminLoginBtn');
+            if (adminControls) {
+                adminControls.classList.toggle('hidden', !state.isAdmin);
+                adminControls.classList.toggle('flex', state.isAdmin);
+            }
+            if (loginBtn) {
+                loginBtn.classList.toggle('hidden', state.isAdmin);
+            }
+        }
+
+        function openLoginModal() {
+            document.getElementById('loginModal')?.classList.remove('hidden');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal')?.classList.add('hidden');
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const user = (document.getElementById('adminUsername')?.value || '').trim();
+            const pass = (document.getElementById('adminPassword')?.value || '').trim();
+
+            if (user === 'admin' && pass === '12345') {
+                state.isAdmin = true;
+                localStorage.setItem(STORAGE_KEYS.ADMIN, 'true');
+                closeLoginModal();
+                updateAdminUI();
+                showToast(state.lang === 'ru' ? 'Вход выполнен как Администратор' : 'Admin sifatida tizimga kirdingiz', 'success');
+            } else {
+                showToast(state.lang === 'ru' ? 'Неверный логин или пароль' : "Login yoki parol noto'g'ri", 'error');
+            }
+        }
+
+        function logoutAdmin() {
+            state.isAdmin = false;
+            localStorage.removeItem(STORAGE_KEYS.ADMIN);
+            updateAdminUI();
+            closeMovieModal();
+            showToast(state.lang === 'ru' ? 'Вы вышли из админ-панели' : 'Admin panelidan chiqdingiz', 'info');
+        }
+
+        function openAddModal() {
+            if (!state.isAdmin) {
+                openLoginModal();
+                return;
+            }
+            const editIdEl = document.getElementById('editMovieId');
+            const titleEl = document.getElementById('formModalTitle');
+            const formEl = document.getElementById('movieForm');
+            const yearEl = document.getElementById('movieYear');
+            const ratingEl = document.getElementById('movieRating');
+            const modalEl = document.getElementById('formModal');
+
+            if (editIdEl) editIdEl.value = '';
+            if (titleEl) titleEl.textContent = state.lang === 'ru' ? 'Добавить фильм' : 'Yangi kino joylash';
+            if (formEl) formEl.reset();
+            if (yearEl) yearEl.value = '2025';
+            if (ratingEl) ratingEl.value = '8.5';
+            if (modalEl) modalEl.classList.remove('hidden');
+        }
+
+        function editCurrentMovie() {
+            if (!state.isAdmin || !state.activeMovieId) return;
+            const movie = state.movies.find(m => m.id === state.activeMovieId);
+            if (!movie) return;
+
+            closeMovieModal();
+            document.getElementById('editMovieId').value = movie.id;
+            document.getElementById('formModalTitle').textContent = state.lang === 'ru' ? 'Редактировать фильм' : 'Kinoni tahrirlash';
+            document.getElementById('movieTitle').value = movie.title || '';
+            document.getElementById('movieYear').value = movie.year || 2025;
+            document.getElementById('movieGenre').value = movie.genre || 'Jangari';
+            document.getElementById('movieRating').value = movie.rating || 8.0;
+            document.getElementById('moviePoster').value = movie.poster || '';
+            document.getElementById('movieVideo').value = movie.videoUrl || '';
+            document.getElementById('movieDesc').value = movie.description || '';
+            document.getElementById('formModal').classList.remove('hidden');
+        }
+
+        function closeFormModal() {
+            document.getElementById('formModal')?.classList.add('hidden');
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            if (!state.isAdmin) return;
+
+            const editId = document.getElementById('editMovieId').value;
+            const movieData = {
+                title: document.getElementById('movieTitle').value.trim(),
+                year: Number(document.getElementById('movieYear').value) || 2025,
+                genre: document.getElementById('movieGenre').value,
+                rating: Number(document.getElementById('movieRating').value) || 8.0,
+                poster: document.getElementById('moviePoster').value.trim(),
+                videoUrl: document.getElementById('movieVideo').value.trim(),
+                description: document.getElementById('movieDesc').value.trim()
+            };
+
+            if (editId) {
+                const idx = state.movies.findIndex(m => m.id === editId);
+                if (idx !== -1) {
+                    state.movies[idx] = { ...state.movies[idx], ...movieData };
+                }
+                if (isFirebaseConnected && db) {
+                    try { await db.collection('kristal_movies').doc(editId).set(state.movies[idx], { merge: true }); } catch (err) {}
+                }
+                showToast(state.lang === 'ru' ? 'Фильм обновлён' : 'Kino yangilandi', 'success');
+            } else {
+                const newMovie = {
+                    id: `m-${Date.now()}`,
+                    views: 1,
+                    comments: [],
+                    ...movieData
+                };
+                state.movies.unshift(newMovie);
+                if (isFirebaseConnected && db) {
+                    try { await db.collection('kristal_movies').doc(newMovie.id).set(newMovie); } catch (err) {}
+                }
+                showToast(state.lang === 'ru' ? 'Фильм добавлен' : "Yangi kino qo'shildi", 'success');
+            }
+
+            persistLocalState();
+            closeFormModal();
+            renderAll();
+        }
+
+        async function deleteCurrentMovie() {
+            if (!state.isAdmin || !state.activeMovieId) return;
+            const idToDelete = state.activeMovieId;
+            state.movies = state.movies.filter(m => m.id !== idToDelete);
+            state.savedIds = state.savedIds.filter(id => id !== idToDelete);
+
+            if (isFirebaseConnected && db) {
+                try { await db.collection('kristal_movies').doc(idToDelete).delete(); } catch (err) {}
+            }
+
+            persistLocalState();
+            closeMovieModal();
+            renderAll();
+            showToast(state.lang === 'ru' ? 'Фильм удалён' : "Kino o'chirildi", 'info');
+        }
+
+        function openAdModal() {
+            if (!state.isAdmin) {
+                openLoginModal();
+                return;
+            }
+            const cfg = state.adConfig || DEFAULT_AD;
+            document.getElementById('adTextInput').value = cfg.text || '';
+            document.getElementById('adBtnTextInput').value = cfg.btnText || '';
+            document.getElementById('adLinkInput').value = cfg.link || '';
+            document.getElementById('contactTgInput').value = cfg.telegram || '';
+            document.getElementById('contactIgInput').value = cfg.instagram || '';
+            document.getElementById('adModal').classList.remove('hidden');
+        }
+
+        function closeAdModal() {
+            document.getElementById('adModal')?.classList.add('hidden');
+        }
+
+        function handleAdSave(e) {
+            e.preventDefault();
+            if (!state.isAdmin) return;
+
+            state.adConfig = {
+                text: document.getElementById('adTextInput').value.trim(),
+                btnText: document.getElementById('adBtnTextInput').value.trim(),
+                link: document.getElementById('adLinkInput').value.trim(),
+                telegram: document.getElementById('contactTgInput').value.trim(),
+                instagram: document.getElementById('contactIgInput').value.trim()
+            };
+
+            persistLocalState();
+            renderAdAndSocials();
+            closeAdModal();
+            showToast(state.lang === 'ru' ? 'Настройки сохранены' : 'Reklama va aloqa sozlamalari saqlandi', 'success');
+        }
+
+        // =========================================================================
+        // 9. ADVERTISER INQUIRY MODAL
+        // =========================================================================
+        function openAdInquiryModal() {
+            renderAdAndSocials();
+            document.getElementById('adInquiryModal')?.classList.remove('hidden');
+        }
+
+        function closeAdInquiryModal() {
+            document.getElementById('adInquiryModal')?.classList.add('hidden');
+        }
+
+        async function handleQuickInquiry(e) {
+            e.preventDefault();
+            const name = (document.getElementById('quickInquiryName')?.value || '').trim();
+            const msg = (document.getElementById('quickInquiryMessage')?.value || '').trim();
+            if (!name || !msg) return;
+
+            const summary = `KRISTAL Reklama so'rovi:\nIsm/Kompaniya: ${name}\nXabar: ${msg}`;
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(summary);
+                }
+            } catch (err) {}
+
+            showToast(state.lang === 'ru' ? 'Текст скопирован, открываем Telegram...' : 'Matn nusxalandi, Telegram ochilmoqda...', 'success');
+            const tgUrl = normalizeSocialUrl(state.adConfig.telegram, 'tg');
+            window.open(tgUrl, '_blank', 'noopener,noreferrer');
+        }
+
+        // =========================================================================
+        // 10. USER PROFILE & SHORTS
+        // =========================================================================
+        function openUserProfileModal(initialTab = 'profile') {
+            document.getElementById('profileNameInput').value = state.userProfile.name || '';
+            document.getElementById('profileHandleInput').value = state.userProfile.handle || '';
+            document.getElementById('profileAvatarInput').value = state.userProfile.avatar || '';
+            document.getElementById('profileBioInput').value = state.userProfile.bio || '';
+            document.getElementById('profileModalAvatarPreview').src = state.userProfile.avatar || DEFAULT_PROFILE.avatar;
+
+            switchProfileTab(initialTab);
+            document.getElementById('userProfileModal')?.classList.remove('hidden');
+        }
+
+        function closeUserProfileModal() {
+            document.getElementById('userProfileModal')?.classList.add('hidden');
+        }
+
+        function switchProfileTab(tab) {
+            const pForm = document.getElementById('profileSettingsForm');
+            const sForm = document.getElementById('shortsUploadForm');
+            const pBtn = document.getElementById('profileTabBtn');
+            const sBtn = document.getElementById('shortsTabBtn');
+
+        function updateAdminUI() {
+            const adminControls = document.getElementById('adminControls');
+            const loginBtn = document.getElementById('adminLoginBtn');
+            if (adminControls) {
+                adminControls.classList.toggle('hidden', !state.isAdmin);
+                adminControls.style.display = state.isAdmin ? 'inline-flex' : 'none';
+            }
+            if (loginBtn) {
+                loginBtn.classList.toggle('hidden', state.isAdmin);
+                loginBtn.style.display = state.isAdmin ? 'none' : 'inline-flex';
+            }
+        }
+
+        function handleSaveProfile(e) {
+            e.preventDefault();
+            let handle = (document.getElementById('profileHandleInput')?.value || '').trim();
+            if (handle && !handle.startsWith('@')) handle = `@${handle}`;
+
+            state.userProfile = {
+                name: (document.getElementById('profileNameInput')?.value || '').trim() || DEFAULT_PROFILE.name,
+                handle: handle || DEFAULT_PROFILE.handle,
+                avatar: (document.getElementById('profileAvatarInput')?.value || '').trim() || DEFAULT_PROFILE.avatar,
+                bio: (document.getElementById('profileBioInput')?.value || '').trim()
+            };
+
+            persistLocalState();
+            renderUserHeader();
+            closeUserProfileModal();
+            showToast(state.lang === 'ru' ? 'Профиль сохранён' : 'Profil saqlandi', 'success');
+        }
+
+        async function handleCreateShort(e) {
+            e.preventDefault();
+            const title = (document.getElementById('shortTitleInput')?.value || '').trim();
+            const videoUrl = (document.getElementById('shortVideoInput')?.value || '').trim();
+            if (!title || !videoUrl) return;
+
+            const newShort = {
+                id: `s-${Date.now()}`,
+                authorName: state.userProfile.name || DEFAULT_PROFILE.name,
+                authorHandle: state.userProfile.handle || DEFAULT_PROFILE.handle,
+                title,
+                videoUrl,
+                likes: 0,
+                liked: false,
+                createdAt: Date.now()
+            };
+
+            state.shorts.unshift(newShort);
+            if (isFirebaseConnected && db) {
+                try { await db.collection('kristal_shorts').doc(newShort.id).set(newShort); } catch (err) {}
+            }
+
+            persistLocalState();
+            document.getElementById('shortsUploadForm')?.reset();
+            closeUserProfileModal();
+            renderShorts();
+            showToast(state.lang === 'ru' ? 'Shorts опубликован!' : 'Shorts video joylandi!', 'success');
+        }
+
+        // =========================================================================
+        // 11. KRISTAL AI EMOJI ASSISTANT
+        // =========================================================================
+        function openAiModal() {
+            const t = I18N[state.lang];
+            if (state.aiHistory.length === 0) {
+                state.aiHistory.push({
+                    role: 'ai',
+                    emoji: state.aiMood.emoji,
+                    text: t.aiGreeting
+                });
+            }
+            renderAiMessages();
+            document.getElementById('aiModal')?.classList.remove('hidden');
+        }
+
+        function closeAiModal() {
+            document.getElementById('aiModal')?.classList.add('hidden');
+        }
+
+        function setAiMood(key, emoji, label) {
+            const animMap = {
+                happy: 'ai-emoji-idle',
+                excited: 'ai-emoji-excited',
+                cool: 'ai-emoji-idle',
+                thoughtful: 'ai-emoji-thinking'
+            };
+            state.aiMood = {
+                emoji,
+                label,
+                animClass: animMap[key] || 'ai-emoji-idle'
+            };
+
+            const headerEmoji = document.getElementById('aiHeaderEmoji');
+            const modalEmoji = document.getElementById('aiModalEmoji');
+            const statusText = document.getElementById('aiMoodStatusText');
+            const normalEyes = document.getElementById('roverEyesNormal');
+            const excitedEyes = document.getElementById('roverEyesExcited');
+            const speechTag = document.getElementById('roamingAiSpeech');
+
+            if (headerEmoji) {
+                headerEmoji.textContent = emoji;
+                headerEmoji.className = `${state.aiMood.animClass} text-base leading-none`;
+            }
+            if (modalEmoji) {
+                modalEmoji.textContent = emoji;
+                modalEmoji.className = `${state.aiMood.animClass} text-3xl leading-none select-none`;
+            }
+            if (statusText) {
+                statusText.textContent = `${I18N[state.lang].aiMoodPrefix}: ${label}`;
+            }
+            if (normalEyes && excitedEyes) {
+                const isExcited = key === 'excited' || key === 'happy';
+                normalEyes.style.display = isExcited ? 'none' : 'inline';
+                excitedEyes.style.display = isExcited ? 'inline' : 'none';
+            }
+            if (speechTag) {
+                speechTag.textContent = `${emoji} ${label}`;
+            }
+        }
+
+        // Sayt bo'ylab silliq harakatlanuvchi rover-robot animatsiyasi
+        function startRoamingAiBot() {
+            const bot = document.getElementById('roamingAiBot');
+            if (!bot) return;
+
+            let posX = 18;
+            let posY = Math.max(120, window.innerHeight - 130);
+            let velX = 1.15;
+            let velY = 0.75;
+            let paused = false;
+
+            bot.addEventListener('mouseenter', () => { paused = true; });
+            bot.addEventListener('mouseleave', () => { paused = false; });
+            bot.addEventListener('touchstart', () => { paused = true; }, { passive: true });
+            bot.addEventListener('touchend', () => { paused = false; }, { passive: true });
+
+            function step() {
+                if (!paused) {
+                    const rect = bot.getBoundingClientRect();
+                    const w = rect.width || 80;
+                    const h = rect.height || 84;
+                    const maxX = Math.max(12, window.innerWidth - w - 12);
+                    const maxY = Math.max(80, window.innerHeight - h - 16);
+
+                    posX += velX;
+                    posY += velY;
+
+                    if (posX <= 12) {
+                        posX = 12;
+                        velX = Math.abs(velX);
+                    } else if (posX >= maxX) {
+                        posX = maxX;
+                        velX = -Math.abs(velX);
+                    }
+
+                    if (posY <= 84) {
+                        posY = 84;
+                        velY = Math.abs(velY);
+                    } else if (posY >= maxY) {
+                        posY = maxY;
+                        velY = -Math.abs(velY);
+                    }
+
+                    // Harakat yo'nalishiga qarab robotni burish
+                    const facingFlip = velX < 0 ? 'scaleX(-1)' : 'scaleX(1)';
+                    bot.style.left = `${posX}px`;
+                    bot.style.top = `${posY}px`;
+                    bot.style.bottom = 'auto';
+                    bot.style.transform = facingFlip;
+                }
+                requestAnimationFrame(step);
+            }
+
+            requestAnimationFrame(step);
+        }
+
+        function generateSmartMovieReply(promptText) {
+            const q = promptText.toLowerCase();
+            let matches = state.movies.filter(m =>
+                (m.genre || '').toLowerCase().includes(q) ||
+                (m.title || '').toLowerCase().includes(q) ||
+                (m.description || '').toLowerCase().includes(q)
+            );
+
+            if (matches.length === 0) {
+                if (q.includes('komed') || q.includes('kulg') || q.includes('комед')) {
+                    matches = state.movies.filter(m => m.genre === 'Komediya');
+                } else if (q.includes('jang') || q.includes('action') || q.includes('боевик')) {
+                    matches = state.movies.filter(m => m.genre === 'Jangari');
+                } else if (q.includes('fantas') || q.includes('kosmos') || q.includes('фантаст')) {
+                    matches = state.movies.filter(m => m.genre === 'Fantastika');
+                } else if (q.includes('dram') || q.includes('драм')) {
+                    matches = state.movies.filter(m => m.genre === 'Drama');
+                }
+            }
+
+            if (matches.length === 0 && state.movies.length > 0) {
+                matches = [state.movies[0]];
+            }
+
+            const picked = matches.slice(0, 2);
+            if (state.lang === 'ru') {
+                const titles = picked.map(m => `«${m.title}» (${m.genre}, ⭐${m.rating})`).join(', ');
+                return {
+                    emoji: '🤩',
+                    mood: 'Воодушевлённый',
+                    text: `Отличный выбор! Посмотрите в нашем каталоге: ${titles}. Нажмите на фильм в списке, чтобы включить плеер.`
+                };
+            }
+
+            const titlesUz = picked.map(m => `«${m.title}» (${m.genre}, ⭐${m.rating})`).join(', ');
+            return {
+                emoji: '🤩',
+                mood: 'Ilhomlangan',
+                text: `Zo'r tanlov! Saytimizdan quyidagi filmni ko'rishingizni tavsiya qilaman: ${titlesUz}. Ro'yxatdan ustiga bosib darhol tomosha qiling!`
+            };
+        }
+
+        function handleAiSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('aiInput');
+            const text = (input ? input.value : '').trim();
+            if (!text) return;
+
+            state.aiHistory.push({ role: 'user', text });
+            if (input) input.value = '';
+
+            setAiMood('thoughtful', '🤔', state.lang === 'ru' ? 'Думаю...' : "O'ylamoqda...");
+            renderAiMessages();
+
+            setTimeout(() => {
+                const reply = generateSmartMovieReply(text);
+                setAiMood('excited', reply.emoji, reply.mood);
+                state.aiHistory.push({ role: 'ai', emoji: reply.emoji, text: reply.text });
+                renderAiMessages();
+            }, 450);
+        }
+
+        function renderAiMessages() {
+            const box = document.getElementById('aiChatMessages');
+            if (!box) return;
+
+            box.innerHTML = state.aiHistory.map(msg => {
+                if (msg.role === 'user') {
+                    return `
+                        <div class="flex justify-end">
+                            <div class="bg-primary text-white text-xs sm:text-sm px-3.5 py-2 rounded-2xl rounded-tr-sm max-w-[82%]">
+                                ${escapeHtml(msg.text)}
+                            </div>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="flex items-start gap-2">
+                        <span class="text-xl leading-none mt-0.5 select-none">${escapeHtml(msg.emoji || '🤖')}</span>
+                        <div class="bg-elevatedBg border border-gray-700/80 text-gray-200 text-xs sm:text-sm px-3.5 py-2 rounded-2xl rounded-tl-sm max-w-[85%]">
+                            ${escapeHtml(msg.text)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // =========================================================================
+        // 12. INITIALIZATION
+        // =========================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLocalState();
+            setLanguage(state.lang);
+            renderAll();
+            startRoamingAiBot();
+            initFirebase();
+        });
+    </script>
+</body>
+</html>
